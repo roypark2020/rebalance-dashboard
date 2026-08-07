@@ -1,1 +1,317 @@
-<h1>준비중</h1>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7:3 리밸런싱 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1c1f26;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --red: #dc2626;
+    --orange: #ea580c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 16px 16px 0;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 18px; margin: 8px 0 12px; }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 0;
+    border: none;
+    background: var(--card);
+    border-radius: 8px 8px 0 0;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .tab-btn.active { color: var(--blue); font-weight: 600; }
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card h2 { font-size: 13px; color: var(--muted); margin: 0 0 8px; font-weight: 500; }
+  .status-line { font-size: 14px; margin-bottom: 4px; }
+  .status-ok { color: var(--green); }
+  .status-warn { color: var(--red); font-weight: 600; }
+  .gauge-wrap { position: relative; margin-top: 24px; margin-bottom: 8px; }
+  .gauge-track { position: relative; height: 10px; background: #e5e7eb; border-radius: 6px; overflow: visible; }
+  .gauge-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 6px; background: var(--blue); }
+  .gauge-marker { position: absolute; top: -4px; width: 2px; height: 18px; background: var(--muted); }
+  .gauge-marker-label { position: absolute; top: -20px; font-size: 10px; color: var(--muted); transform: translateX(-50%); }
+  .gauge-current { position: absolute; top: -28px; font-size: 12px; font-weight: 700; color: var(--blue); transform: translateX(-50%); }
+  .amount-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .amount-grid div { text-align: center; }
+  .amount-grid .label { font-size: 11px; color: var(--muted); }
+  .amount-grid .value { font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .return-row { display: flex; justify-content: space-between; font-size: 14px; margin-top: 4px; }
+  .return-pos { color: var(--red); }
+  .return-neg { color: var(--blue); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { padding: 6px 4px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 500; }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0; }
+  .settings-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { color: var(--muted); }
+  canvas { max-width: 100%; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>7:3 리밸런싱</h1>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="status">현황</button>
+  <button class="tab-btn" data-tab="history">기록</button>
+  <button class="tab-btn" data-tab="settings">설정</button>
+</div>
+
+<main>
+  <div id="tab-status" class="tab-content active">
+    <div class="card">
+      <h2>봇 상태</h2>
+      <div id="bot-status" class="status-line">불러오는 중...</div>
+    </div>
+
+    <div class="card">
+      <h2>주식 비중 (67% · 70% · 73%)</h2>
+      <div class="gauge-wrap">
+        <div class="gauge-track">
+          <div id="gauge-fill" class="gauge-fill" style="width:0%"></div>
+          <div class="gauge-marker" style="left:67%"></div>
+          <div class="gauge-marker" style="left:70%"></div>
+          <div class="gauge-marker" style="left:73%"></div>
+          <div class="gauge-marker-label" style="left:67%">67</div>
+          <div class="gauge-marker-label" style="left:73%">73</div>
+          <div id="gauge-current" class="gauge-current" style="left:0%">0%</div>
+        </div>
+      </div>
+      <div class="amount-grid">
+        <div><div class="label">총자산</div><div id="amt-total" class="value">-</div></div>
+        <div><div class="label">주식평가</div><div id="amt-stock" class="value">-</div></div>
+        <div><div class="label">예수금</div><div id="amt-cash" class="value">-</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>수익</h2>
+      <div class="return-row"><span>누적 수익 (원금 대비)</span><span id="ret-total">-</span></div>
+      <div class="return-row"><span>전일 대비</span><span id="ret-daily">-</span></div>
+    </div>
+
+    <div class="card">
+      <h2>자산 추이</h2>
+      <canvas id="assetChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <div id="tab-history" class="tab-content">
+    <div class="card">
+      <h2>일별 로그</h2>
+      <div id="daily-log-table"></div>
+    </div>
+    <div class="card">
+      <h2>매매 이력</h2>
+      <div id="trades-table"></div>
+    </div>
+  </div>
+
+  <div id="tab-settings" class="tab-content">
+    <div class="card">
+      <div class="settings-row"><span class="settings-label">목표 비중</span><span>주식 70% / 현금 30%</span></div>
+      <div class="settings-row"><span class="settings-label">밴드</span><span>±3%p (67%~73%)</span></div>
+      <div class="settings-row"><span class="settings-label">실행 시각</span><span>평일 14:30</span></div>
+      <div class="settings-row"><span class="settings-label">1회 주문 상한</span><span>총자산의 20%</span></div>
+      <div class="settings-row"><span class="settings-label">일일 주문 한도</span><span>2건</span></div>
+      <div class="settings-row"><span class="settings-label">대상 종목</span><span>KODEX 200 (069500)</span></div>
+      <div class="settings-row"><span class="settings-label">원금 (최초 기록 기준)</span><span id="settings-principal">-</span></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://fxmqnqlfwokodcdsqdbq.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4bXFucWxmd29rb2RjZHNxZGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNDM5NzQsImV4cCI6MjEwMTYxOTk3NH0.Dca5hs8701cYmfv6Ni5kF82QVpFSf_NJSLmkjAg6ml0";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+function won(n) {
+  return Math.round(n).toLocaleString("ko-KR") + "원";
+}
+
+function fmtDate(d) {
+  return d;
+}
+
+async function loadDashboard() {
+  const { data: logs, error: logErr } = await sb
+    .from("daily_log")
+    .select("*")
+    .order("log_date", { ascending: true });
+
+  const { data: trades, error: tradeErr } = await sb
+    .from("trades")
+    .select("*")
+    .order("traded_at", { ascending: false });
+
+  if (logErr || !logs || logs.length === 0) {
+    document.getElementById("bot-status").innerHTML = '<span class="status-warn">아직 기록이 없습니다.</span>';
+    document.getElementById("daily-log-table").innerHTML = '<div class="empty">기록 없음</div>';
+    document.getElementById("trades-table").innerHTML = '<div class="empty">매매 이력 없음</div>';
+    return;
+  }
+
+  const latest = logs[logs.length - 1];
+  const prev = logs.length >= 2 ? logs[logs.length - 2] : null;
+  const first = logs[0];
+
+  // 봇 상태
+  const lastDate = new Date(latest.log_date);
+  const today = new Date();
+  const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+  const statusEl = document.getElementById("bot-status");
+  if (diffDays >= 3) {
+    statusEl.innerHTML = `<span class="status-warn">⚠ 마지막 실행: ${latest.log_date} (${diffDays}일 전 — 확인 필요)</span>`;
+  } else {
+    statusEl.innerHTML = `<span class="status-ok">정상 · 마지막 실행: ${latest.log_date}</span>`;
+  }
+
+  // 게이지
+  const ratioPct = latest.stock_ratio * 100;
+  const clamped = Math.max(0, Math.min(100, ratioPct));
+  document.getElementById("gauge-fill").style.width = clamped + "%";
+  const cur = document.getElementById("gauge-current");
+  cur.style.left = clamped + "%";
+  cur.textContent = ratioPct.toFixed(1) + "%";
+  if (ratioPct > 73 || ratioPct < 67) {
+    document.getElementById("gauge-fill").style.background = "var(--red)";
+  } else {
+    document.getElementById("gauge-fill").style.background = "var(--green)";
+  }
+
+  document.getElementById("amt-total").textContent = won(latest.total_asset);
+  document.getElementById("amt-stock").textContent = won(latest.stock_eval_amount);
+  document.getElementById("amt-cash").textContent = won(latest.cash);
+
+  // 수익률
+  const totalReturn = ((latest.total_asset - first.total_asset) / first.total_asset) * 100;
+  const totalReturnEl = document.getElementById("ret-total");
+  totalReturnEl.textContent = (totalReturn >= 0 ? "+" : "") + totalReturn.toFixed(2) + "%";
+  totalReturnEl.className = totalReturn >= 0 ? "return-pos" : "return-neg";
+
+  const dailyEl = document.getElementById("ret-daily");
+  if (prev) {
+    const dailyReturn = ((latest.total_asset - prev.total_asset) / prev.total_asset) * 100;
+    dailyEl.textContent = (dailyReturn >= 0 ? "+" : "") + dailyReturn.toFixed(2) + "%";
+    dailyEl.className = dailyReturn >= 0 ? "return-pos" : "return-neg";
+  } else {
+    dailyEl.textContent = "비교할 전일 기록 없음";
+  }
+
+  document.getElementById("settings-principal").textContent = won(first.total_asset) + " (" + first.log_date + ")";
+
+  // 차트
+  new Chart(document.getElementById("assetChart"), {
+    type: "line",
+    data: {
+      labels: logs.map(l => l.log_date),
+      datasets: [{
+        label: "총자산",
+        data: logs.map(l => l.total_asset),
+        borderColor: "#2563eb",
+        backgroundColor: "rgba(37,99,235,0.1)",
+        fill: true,
+        tension: 0.2,
+      }],
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => (v / 10000).toLocaleString() + "만" } } },
+    },
+  });
+
+  // 일별 로그 표 (최신순)
+  const logRows = [...logs].reverse().map(l => `
+    <tr>
+      <td>${l.log_date}</td>
+      <td>${won(l.total_asset)}</td>
+      <td>${(l.stock_ratio * 100).toFixed(1)}%</td>
+      <td>${l.action}</td>
+    </tr>`).join("");
+  document.getElementById("daily-log-table").innerHTML = `
+    <table>
+      <thead><tr><th>날짜</th><th>총자산</th><th>비중</th><th>판정</th></tr></thead>
+      <tbody>${logRows}</tbody>
+    </table>`;
+
+  // 매매 이력 표
+  if (!trades || trades.length === 0) {
+    document.getElementById("trades-table").innerHTML = '<div class="empty">아직 매매 이력이 없습니다.</div>';
+  } else {
+    const tradeRows = trades.map(t => `
+      <tr>
+        <td>${new Date(t.traded_at).toLocaleDateString("ko-KR")}</td>
+        <td>${t.side}</td>
+        <td>${t.quantity}</td>
+        <td>${won(t.price)}</td>
+        <td>${won(t.amount)}</td>
+        <td>${(t.stock_ratio_at_trade * 100).toFixed(1)}%</td>
+      </tr>`).join("");
+    document.getElementById("trades-table").innerHTML = `
+      <table>
+        <thead><tr><th>날짜</th><th>구분</th><th>수량</th><th>단가</th><th>금액</th><th>당시비중</th></tr></thead>
+        <tbody>${tradeRows}</tbody>
+      </table>`;
+  }
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>

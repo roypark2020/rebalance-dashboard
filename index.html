@@ -213,6 +213,10 @@
     </div>
   </header>
 
+  <div id="stop-banner" style="display:none; background:var(--critical); color:#fff; text-align:center; font-size:13px; font-weight:700; padding:10px; border-radius:10px; margin-bottom:12px;">
+    ⛔ 정지 상태입니다 — 봇이 실행되지 않습니다
+  </div>
+
   <div class="tabs">
     <button class="tab-btn active" data-tab="status">현황</button>
     <button class="tab-btn" data-tab="history">기록</button>
@@ -259,6 +263,12 @@
     <div class="card">
       <h2>자산 추이</h2>
       <canvas id="assetChart" height="180"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>긴급정지</h2>
+      <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 12px;">누르면 봇이 다음 실행부터 아무것도 하지 않고 알림만 보냅니다. 다시 누르면 정상 재개됩니다.</p>
+      <button id="stop-toggle-btn" class="login-btn" style="background:var(--critical);">불러오는 중...</button>
     </div>
   </div>
 
@@ -311,6 +321,42 @@ function isDark() {
   return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
+let botControlId = null;
+let botControlStopped = false;
+
+async function loadStopControl() {
+  const { data } = await sb.from("bot_control").select("*").limit(1);
+  if (!data || data.length === 0) return;
+  botControlId = data[0].id;
+  botControlStopped = data[0].is_stopped;
+  renderStopControl();
+}
+
+function renderStopControl() {
+  document.getElementById("stop-banner").style.display = botControlStopped ? "block" : "none";
+  const btn = document.getElementById("stop-toggle-btn");
+  if (botControlStopped) {
+    btn.textContent = "정지 해제하기";
+    btn.style.background = "var(--good)";
+  } else {
+    btn.textContent = "지금 정지시키기";
+    btn.style.background = "var(--critical)";
+  }
+}
+
+document.getElementById("stop-toggle-btn").addEventListener("click", async () => {
+  if (botControlId === null) return;
+  const btn = document.getElementById("stop-toggle-btn");
+  btn.disabled = true;
+  const newValue = !botControlStopped;
+  const { error } = await sb.from("bot_control").update({ is_stopped: newValue }).eq("id", botControlId);
+  btn.disabled = false;
+  if (!error) {
+    botControlStopped = newValue;
+    renderStopControl();
+  }
+});
+
 async function loadDashboard() {
   const { data: logs, error: logErr } = await sb
     .from("daily_log")
@@ -321,6 +367,8 @@ async function loadDashboard() {
     .from("trades")
     .select("*")
     .order("traded_at", { ascending: false });
+
+  await loadStopControl();
 
   if (logErr || !logs || logs.length === 0) {
     document.getElementById("bot-status").innerHTML = '<span class="dot dot-warn"></span><span class="status-text-warn">아직 기록이 없습니다</span>';

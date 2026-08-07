@@ -8,132 +8,215 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
   :root {
-    --bg: #f5f6f8;
-    --card: #ffffff;
-    --text: #1c1f26;
-    --muted: #6b7280;
-    --border: #e5e7eb;
-    --blue: #2563eb;
-    --green: #16a34a;
-    --red: #dc2626;
-    --orange: #ea580c;
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --series-1-soft:  rgba(42,120,214,0.12);
+    --good:           #0ca30c;
+    --good-soft:      rgba(12,163,12,0.10);
+    --warning:        #fab219;
+    --warning-soft:   rgba(250,178,25,0.14);
+    --critical:       #d03b3b;
+    --radius: 14px;
   }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-1-soft:  rgba(57,135,229,0.16);
+      --good-soft:      rgba(12,163,12,0.16);
+      --warning-soft:   rgba(250,178,25,0.18);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-1-soft:  rgba(57,135,229,0.16);
+    --good-soft:      rgba(12,163,12,0.16);
+    --warning-soft:   rgba(250,178,25,0.18);
+  }
+
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
   }
-  header {
-    padding: 16px 16px 0;
-    max-width: 480px;
-    margin: 0 auto;
-  }
-  h1 { font-size: 18px; margin: 8px 0 12px; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+  header h1 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  header .sub { font-size: 12px; color: var(--text-muted); }
+
   .tabs {
     display: flex;
-    gap: 4px;
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 0 16px;
+    gap: 2px;
+    background: var(--border);
+    padding: 3px;
+    border-radius: 10px;
+    margin-bottom: 16px;
   }
   .tab-btn {
     flex: 1;
-    padding: 10px 0;
+    padding: 9px 0;
     border: none;
-    background: var(--card);
-    border-radius: 8px 8px 0 0;
-    font-size: 14px;
-    color: var(--muted);
+    background: transparent;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
     cursor: pointer;
   }
-  .tab-btn.active { color: var(--blue); font-weight: 600; }
-  main {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 16px;
-  }
+  .tab-btn.active { background: var(--surface-1); color: var(--text-primary); font-weight: 700; box-shadow: 0 1px 2px var(--border); }
+
   .tab-content { display: none; }
   .tab-content.active { display: block; }
+
   .card {
-    background: var(--card);
+    background: var(--surface-1);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 16px;
     margin-bottom: 12px;
   }
-  .card h2 { font-size: 13px; color: var(--muted); margin: 0 0 8px; font-weight: 500; }
-  .status-line { font-size: 14px; margin-bottom: 4px; }
-  .status-ok { color: var(--green); }
-  .status-warn { color: var(--red); font-weight: 600; }
-  .gauge-wrap { position: relative; margin-top: 24px; margin-bottom: 8px; }
-  .gauge-track { position: relative; height: 10px; background: #e5e7eb; border-radius: 6px; overflow: visible; }
-  .gauge-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 6px; background: var(--blue); }
-  .gauge-marker { position: absolute; top: -4px; width: 2px; height: 18px; background: var(--muted); }
-  .gauge-marker-label { position: absolute; top: -20px; font-size: 10px; color: var(--muted); transform: translateX(-50%); }
-  .gauge-current { position: absolute; top: -28px; font-size: 12px; font-weight: 700; color: var(--blue); transform: translateX(-50%); }
-  .amount-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
-  .amount-grid div { text-align: center; }
-  .amount-grid .label { font-size: 11px; color: var(--muted); }
-  .amount-grid .value { font-size: 15px; font-weight: 600; margin-top: 2px; }
-  .return-row { display: flex; justify-content: space-between; font-size: 14px; margin-top: 4px; }
-  .return-pos { color: var(--red); }
-  .return-neg { color: var(--blue); }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th, td { padding: 6px 4px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  th:first-child, td:first-child { text-align: left; }
-  th { color: var(--muted); font-weight: 500; }
-  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0; }
-  .settings-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .card h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+
+  .status-row { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dot-good { background: var(--good); }
+  .dot-warn { background: var(--warning); }
+  .status-text-good { color: var(--good); font-weight: 700; }
+  .status-text-warn { color: var(--warning); font-weight: 700; }
+  .status-sub { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  }
+  .badge-good { background: var(--good-soft); color: var(--good); }
+  .badge-warn { background: var(--warning-soft); color: #9a6b00; }
+  @media (prefers-color-scheme: dark) { .badge-warn { color: var(--warning); } }
+  :root[data-theme="dark"] .badge-warn { color: var(--warning); }
+
+  .gauge-wrap { margin-top: 30px; margin-bottom: 6px; padding: 0 2px; }
+  .gauge-track { position: relative; height: 8px; background: var(--gridline); border-radius: 999px; }
+  .gauge-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; background: var(--good); transition: width .3s; }
+  .gauge-marker { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--baseline); transform: translateX(-1px); }
+  .gauge-marker-label { position: absolute; top: -19px; font-size: 10px; color: var(--text-muted); transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+  .gauge-current {
+    position: absolute; top: -34px; font-size: 12px; font-weight: 700; color: var(--text-primary);
+    transform: translateX(-50%); white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 18px; }
+  .stat-grid .stat { text-align: center; }
+  .stat .label { font-size: 11px; color: var(--text-muted); }
+  .stat .value { font-size: 15px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+  .return-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--gridline); }
+  .return-row:last-child { border-bottom: none; }
+  .return-row .label { color: var(--text-secondary); }
+  .return-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ret-pos { color: var(--critical); }
+  .ret-neg { color: var(--series-1); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--gridline); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; font-variant-numeric: normal; }
+  th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
+  tbody tr:last-child td { border-bottom: none; }
+  .table-scroll { overflow-x: auto; }
+
+  .empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 24px 0; }
+
+  .settings-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--gridline); font-size: 13.5px; }
   .settings-row:last-child { border-bottom: none; }
-  .settings-label { color: var(--muted); }
+  .settings-label { color: var(--text-secondary); }
+  .settings-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+
   canvas { max-width: 100%; }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>7:3 리밸런싱</h1>
-</header>
+<div class="wrap">
+  <header>
+    <h1>7:3 리밸런싱</h1>
+    <span class="sub">KODEX 200 · 모의투자</span>
+  </header>
 
-<div class="tabs">
-  <button class="tab-btn active" data-tab="status">현황</button>
-  <button class="tab-btn" data-tab="history">기록</button>
-  <button class="tab-btn" data-tab="settings">설정</button>
-</div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="status">현황</button>
+    <button class="tab-btn" data-tab="history">기록</button>
+    <button class="tab-btn" data-tab="settings">설정</button>
+  </div>
 
-<main>
   <div id="tab-status" class="tab-content active">
     <div class="card">
       <h2>봇 상태</h2>
-      <div id="bot-status" class="status-line">불러오는 중...</div>
+      <div id="bot-status" class="status-row">불러오는 중...</div>
     </div>
 
     <div class="card">
-      <h2>주식 비중 (67% · 70% · 73%)</h2>
+      <h2>주식 비중</h2>
       <div class="gauge-wrap">
         <div class="gauge-track">
           <div id="gauge-fill" class="gauge-fill" style="width:0%"></div>
-          <div class="gauge-marker" style="left:67%"></div>
-          <div class="gauge-marker" style="left:70%"></div>
-          <div class="gauge-marker" style="left:73%"></div>
-          <div class="gauge-marker-label" style="left:67%">67</div>
-          <div class="gauge-marker-label" style="left:73%">73</div>
+          <div class="gauge-marker" style="left:42.5%"></div>
+          <div class="gauge-marker" style="left:50%"></div>
+          <div class="gauge-marker" style="left:57.5%"></div>
+          <div class="gauge-marker-label" style="left:42.5%">67%</div>
+          <div class="gauge-marker-label" style="left:57.5%">73%</div>
           <div id="gauge-current" class="gauge-current" style="left:0%">0%</div>
         </div>
+        <div style="display:flex; justify-content:space-between; margin-top:6px;">
+          <span style="font-size:10px; color:var(--text-muted);">50%</span>
+          <span style="font-size:10px; color:var(--text-muted);">90%</span>
+        </div>
       </div>
-      <div class="amount-grid">
-        <div><div class="label">총자산</div><div id="amt-total" class="value">-</div></div>
-        <div><div class="label">주식평가</div><div id="amt-stock" class="value">-</div></div>
-        <div><div class="label">예수금</div><div id="amt-cash" class="value">-</div></div>
+      <div id="action-badge" style="margin-top:16px;"></div>
+      <div class="stat-grid">
+        <div class="stat"><div class="label">총자산</div><div id="amt-total" class="value">-</div></div>
+        <div class="stat"><div class="label">주식평가</div><div id="amt-stock" class="value">-</div></div>
+        <div class="stat"><div class="label">예수금</div><div id="amt-cash" class="value">-</div></div>
       </div>
     </div>
 
     <div class="card">
       <h2>수익</h2>
-      <div class="return-row"><span>누적 수익 (원금 대비)</span><span id="ret-total">-</span></div>
-      <div class="return-row"><span>전일 대비</span><span id="ret-daily">-</span></div>
+      <div class="return-row"><span class="label">누적 수익 (원금 대비)</span><span id="ret-total" class="return-val">-</span></div>
+      <div class="return-row"><span class="label">전일 대비</span><span id="ret-daily" class="return-val">-</span></div>
     </div>
 
     <div class="card">
@@ -145,26 +228,26 @@
   <div id="tab-history" class="tab-content">
     <div class="card">
       <h2>일별 로그</h2>
-      <div id="daily-log-table"></div>
+      <div id="daily-log-table" class="table-scroll"></div>
     </div>
     <div class="card">
       <h2>매매 이력</h2>
-      <div id="trades-table"></div>
+      <div id="trades-table" class="table-scroll"></div>
     </div>
   </div>
 
   <div id="tab-settings" class="tab-content">
     <div class="card">
-      <div class="settings-row"><span class="settings-label">목표 비중</span><span>주식 70% / 현금 30%</span></div>
-      <div class="settings-row"><span class="settings-label">밴드</span><span>±3%p (67%~73%)</span></div>
-      <div class="settings-row"><span class="settings-label">실행 시각</span><span>평일 14:30</span></div>
-      <div class="settings-row"><span class="settings-label">1회 주문 상한</span><span>총자산의 20%</span></div>
-      <div class="settings-row"><span class="settings-label">일일 주문 한도</span><span>2건</span></div>
-      <div class="settings-row"><span class="settings-label">대상 종목</span><span>KODEX 200 (069500)</span></div>
-      <div class="settings-row"><span class="settings-label">원금 (최초 기록 기준)</span><span id="settings-principal">-</span></div>
+      <div class="settings-row"><span class="settings-label">목표 비중</span><span class="settings-val">주식 70% / 현금 30%</span></div>
+      <div class="settings-row"><span class="settings-label">밴드</span><span class="settings-val">±3%p (67%~73%)</span></div>
+      <div class="settings-row"><span class="settings-label">실행 시각</span><span class="settings-val">평일 14:30</span></div>
+      <div class="settings-row"><span class="settings-label">1회 주문 상한</span><span class="settings-val">총자산의 20%</span></div>
+      <div class="settings-row"><span class="settings-label">일일 주문 한도</span><span class="settings-val">2건</span></div>
+      <div class="settings-row"><span class="settings-label">대상 종목</span><span class="settings-val">KODEX 200 (069500)</span></div>
+      <div class="settings-row"><span class="settings-label">원금 (최초 기록 기준)</span><span id="settings-principal" class="settings-val">-</span></div>
     </div>
   </div>
-</main>
+</div>
 
 <script>
 const SUPABASE_URL = "https://fxmqnqlfwokodcdsqdbq.supabase.co";
@@ -184,8 +267,11 @@ function won(n) {
   return Math.round(n).toLocaleString("ko-KR") + "원";
 }
 
-function fmtDate(d) {
-  return d;
+function isDark() {
+  const stamped = document.documentElement.getAttribute("data-theme");
+  if (stamped === "dark") return true;
+  if (stamped === "light") return false;
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
 async function loadDashboard() {
@@ -194,13 +280,13 @@ async function loadDashboard() {
     .select("*")
     .order("log_date", { ascending: true });
 
-  const { data: trades, error: tradeErr } = await sb
+  const { data: trades } = await sb
     .from("trades")
     .select("*")
     .order("traded_at", { ascending: false });
 
   if (logErr || !logs || logs.length === 0) {
-    document.getElementById("bot-status").innerHTML = '<span class="status-warn">아직 기록이 없습니다.</span>';
+    document.getElementById("bot-status").innerHTML = '<span class="dot dot-warn"></span><span class="status-text-warn">아직 기록이 없습니다</span>';
     document.getElementById("daily-log-table").innerHTML = '<div class="empty">기록 없음</div>';
     document.getElementById("trades-table").innerHTML = '<div class="empty">매매 이력 없음</div>';
     return;
@@ -216,22 +302,27 @@ async function loadDashboard() {
   const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
   const statusEl = document.getElementById("bot-status");
   if (diffDays >= 3) {
-    statusEl.innerHTML = `<span class="status-warn">⚠ 마지막 실행: ${latest.log_date} (${diffDays}일 전 — 확인 필요)</span>`;
+    statusEl.innerHTML = `<span class="dot dot-warn"></span><span class="status-text-warn">⚠ ${diffDays}일째 실행 기록 없음 — 확인 필요</span>`;
   } else {
-    statusEl.innerHTML = `<span class="status-ok">정상 · 마지막 실행: ${latest.log_date}</span>`;
+    statusEl.innerHTML = `<span class="dot dot-good"></span><span class="status-text-good">정상</span><span class="status-sub" style="margin-left:4px;">· 마지막 실행 ${latest.log_date}</span>`;
   }
 
-  // 게이지
+  // 게이지 (50%~90% 구간만 축으로 써서 67~73 밴드가 잘 보이게 함)
+  const GAUGE_MIN = 50, GAUGE_MAX = 90;
   const ratioPct = latest.stock_ratio * 100;
-  const clamped = Math.max(0, Math.min(100, ratioPct));
-  document.getElementById("gauge-fill").style.width = clamped + "%";
+  const gaugePos = Math.max(0, Math.min(100, ((ratioPct - GAUGE_MIN) / (GAUGE_MAX - GAUGE_MIN)) * 100));
+  const inBand = ratioPct >= 67 && ratioPct <= 73;
+  document.getElementById("gauge-fill").style.width = gaugePos + "%";
+  document.getElementById("gauge-fill").style.background = inBand ? "var(--good)" : "var(--warning)";
   const cur = document.getElementById("gauge-current");
-  cur.style.left = clamped + "%";
+  cur.style.left = gaugePos + "%";
   cur.textContent = ratioPct.toFixed(1) + "%";
-  if (ratioPct > 73 || ratioPct < 67) {
-    document.getElementById("gauge-fill").style.background = "var(--red)";
+
+  const badgeEl = document.getElementById("action-badge");
+  if (latest.action === "조치 없음") {
+    badgeEl.innerHTML = '<span class="badge badge-good">● 밴드 안 · 조치 없음</span>';
   } else {
-    document.getElementById("gauge-fill").style.background = "var(--green)";
+    badgeEl.innerHTML = `<span class="badge badge-warn">● ${latest.action}</span>`;
   }
 
   document.getElementById("amt-total").textContent = won(latest.total_asset);
@@ -242,36 +333,56 @@ async function loadDashboard() {
   const totalReturn = ((latest.total_asset - first.total_asset) / first.total_asset) * 100;
   const totalReturnEl = document.getElementById("ret-total");
   totalReturnEl.textContent = (totalReturn >= 0 ? "+" : "") + totalReturn.toFixed(2) + "%";
-  totalReturnEl.className = totalReturn >= 0 ? "return-pos" : "return-neg";
+  totalReturnEl.className = "return-val " + (totalReturn >= 0 ? "ret-pos" : "ret-neg");
 
   const dailyEl = document.getElementById("ret-daily");
   if (prev) {
     const dailyReturn = ((latest.total_asset - prev.total_asset) / prev.total_asset) * 100;
     dailyEl.textContent = (dailyReturn >= 0 ? "+" : "") + dailyReturn.toFixed(2) + "%";
-    dailyEl.className = dailyReturn >= 0 ? "return-pos" : "return-neg";
+    dailyEl.className = "return-val " + (dailyReturn >= 0 ? "ret-pos" : "ret-neg");
   } else {
-    dailyEl.textContent = "비교할 전일 기록 없음";
+    dailyEl.textContent = "-";
+    dailyEl.className = "return-val";
   }
 
   document.getElementById("settings-principal").textContent = won(first.total_asset) + " (" + first.log_date + ")";
 
   // 차트
+  const dark = isDark();
+  const seriesColor = dark ? "#3987e5" : "#2a78d6";
+  const gridColor = dark ? "#2c2c2a" : "#e1e0d9";
+  const tickColor = dark ? "#c3c2b7" : "#52514e";
+
   new Chart(document.getElementById("assetChart"), {
     type: "line",
     data: {
-      labels: logs.map(l => l.log_date),
+      labels: logs.map(l => l.log_date.slice(5)),
       datasets: [{
         label: "총자산",
         data: logs.map(l => l.total_asset),
-        borderColor: "#2563eb",
-        backgroundColor: "rgba(37,99,235,0.1)",
+        borderColor: seriesColor,
+        backgroundColor: dark ? "rgba(57,135,229,0.16)" : "rgba(42,120,214,0.12)",
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
         fill: true,
-        tension: 0.2,
+        tension: 0.25,
       }],
     },
     options: {
-      plugins: { legend: { display: false } },
-      scales: { y: { ticks: { callback: v => (v / 10000).toLocaleString() + "만" } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => won(ctx.parsed.y) },
+        },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 10 } } },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: tickColor, font: { size: 10 }, callback: v => (v / 10000).toLocaleString() + "만" },
+        },
+      },
     },
   });
 
@@ -291,7 +402,7 @@ async function loadDashboard() {
 
   // 매매 이력 표
   if (!trades || trades.length === 0) {
-    document.getElementById("trades-table").innerHTML = '<div class="empty">아직 매매 이력이 없습니다.</div>';
+    document.getElementById("trades-table").innerHTML = '<div class="empty">아직 매매 이력이 없습니다</div>';
   } else {
     const tradeRows = trades.map(t => `
       <tr>

@@ -252,6 +252,9 @@
         <div class="stat"><div class="label">주식평가</div><div id="amt-stock" class="value">-</div></div>
         <div class="stat"><div class="label">예수금</div><div id="amt-cash" class="value">-</div></div>
       </div>
+      <div class="return-row" style="margin-top:10px; border-top:1px solid var(--gridline); padding-top:10px;">
+        <span class="label">누적 입금액</span><span id="amt-deposited" class="return-val">-</span>
+      </div>
     </div>
 
     <div class="card">
@@ -427,6 +430,7 @@ async function loadDashboard() {
   document.getElementById("amt-total").textContent = won(latest.total_asset);
   document.getElementById("amt-stock").textContent = won(latest.stock_eval_amount);
   document.getElementById("amt-cash").textContent = won(latest.cash);
+  document.getElementById("amt-deposited").textContent = totalDeposited > 0 ? won(totalDeposited) : "-";
 
   // KODEX 200 현재가 / 전일대비
   const priceEl = document.getElementById("kodex-price");

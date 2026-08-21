@@ -368,6 +368,13 @@ async function loadDashboard() {
     .select("*")
     .order("traded_at", { ascending: false });
 
+  const { data: deposits } = await sb
+    .from("deposits")
+    .select("*")
+    .order("deposit_date", { ascending: true });
+
+  const totalDeposited = (deposits || []).reduce((sum, d) => sum + d.amount, 0);
+
   await loadStopControl();
 
   if (logErr || !logs || logs.length === 0) {
@@ -414,15 +421,23 @@ async function loadDashboard() {
   document.getElementById("amt-stock").textContent = won(latest.stock_eval_amount);
   document.getElementById("amt-cash").textContent = won(latest.cash);
 
-  // 수익률
-  const totalReturn = ((latest.total_asset - first.total_asset) / first.total_asset) * 100;
+  // 수익률 (입금액은 수익이 아니므로 빼고 계산)
   const totalReturnEl = document.getElementById("ret-total");
-  totalReturnEl.textContent = (totalReturn >= 0 ? "+" : "") + totalReturn.toFixed(2) + "%";
-  totalReturnEl.className = "return-val " + (totalReturn >= 0 ? "ret-pos" : "ret-neg");
+  if (totalDeposited > 0) {
+    const totalReturn = ((latest.total_asset - totalDeposited) / totalDeposited) * 100;
+    totalReturnEl.textContent = (totalReturn >= 0 ? "+" : "") + totalReturn.toFixed(2) + "%";
+    totalReturnEl.className = "return-val " + (totalReturn >= 0 ? "ret-pos" : "ret-neg");
+  } else {
+    totalReturnEl.textContent = "입금 기록 없음";
+    totalReturnEl.className = "return-val";
+  }
 
   const dailyEl = document.getElementById("ret-daily");
   if (prev) {
-    const dailyReturn = ((latest.total_asset - prev.total_asset) / prev.total_asset) * 100;
+    const todaysDeposit = (deposits || [])
+      .filter((d) => d.deposit_date === latest.log_date)
+      .reduce((sum, d) => sum + d.amount, 0);
+    const dailyReturn = ((latest.total_asset - todaysDeposit - prev.total_asset) / prev.total_asset) * 100;
     dailyEl.textContent = (dailyReturn >= 0 ? "+" : "") + dailyReturn.toFixed(2) + "%";
     dailyEl.className = "return-val " + (dailyReturn >= 0 ? "ret-pos" : "ret-neg");
   } else {
@@ -430,7 +445,8 @@ async function loadDashboard() {
     dailyEl.className = "return-val";
   }
 
-  document.getElementById("settings-principal").textContent = won(first.total_asset) + " (" + first.log_date + ")";
+  document.getElementById("settings-principal").textContent =
+    totalDeposited > 0 ? won(totalDeposited) + " (누적 입금액)" : won(first.total_asset) + " (" + first.log_date + ")";
 
   // 차트
   const dark = isDark();
